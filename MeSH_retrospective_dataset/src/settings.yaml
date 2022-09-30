@@ -1,0 +1,31 @@
+# The path for the folder where all reslts will be stored
+workingPath: '/**** Write here the path to the folder where you will save the files and the results  ****/'
+# The path to the flder with the XML files for all MeSH versions (both descXXXX.xml and suppXXXX.xml should be available)
+meshXmlPath: '/**** Write here the path to the folder where the MeSH files are stored ****/'
+# If true, suggest mappings from new descriptors to SCRs (based on PMN fields etc) fr manual review.
+suggestPMNmappings: False
+# If true, calculate average No of concepts per SCR and Descriptor and print for each year.
+calculateConceptAVGs: False
+# If true, suggestinons for SCR-mapping suggestions will be printed for non-matched PMnotes in the log for manual checking. 
+# Additional information will also be printed in the log
+debugMode: False
+# The reference year for provenance type calculation
+referenceYear: 2020
+# The last year to consider in the analysis
+nowYear: 2019
+# The first year to consider in the analysis
+oldYearInitial: 2005
+# The character for joining/splitting serialized information
+splitChar: '~'
+# Maximum training articles to retrieve for a use-case
+articlesThreshold: 1000000
+# Minimum WS labeled articles required for a use-case
+wsLabelThreshold: 10
+# Path to a Lucene index of all PubMed/MEDLINE documents available 
+documentIndexPath: '/**** Write here the path to the folder where the Lucene Index containing the pubmed doc is stored  ****/'
+# UMLS local instance in MySQL
+umls: {dbname: 'jdbc:mysql:/** link to server**/', dbuser: '/** username **/', dbpass: '/** password **/'}
+# MeSH version in UMLS used for mapping MeSH concepts to CUIs
+umlsMeshVersion: 'MSH2020_2019_08_27'
+# SemMedDB local instance in MySQL
+smdb: {dbname: 'jdbc:mysql:/** link to server**/', dbuser: '/** username **/', dbpass: '/** password **/'}
