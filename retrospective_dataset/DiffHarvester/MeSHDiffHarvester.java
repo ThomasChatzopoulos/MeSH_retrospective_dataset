@@ -234,11 +234,11 @@ public class MeSHDiffHarvester {
         selectDatasets(harvester, oldYearInitial, nowYear, articlesThreshold, wsLabelThreshold);
         
         // create JSON datasets from CSVs and Lucene Index
-//        dsCreation.createJSONDatasets(oldYearInitial, nowYear);
+        dsCreation.createJSONDatasets(oldYearInitial, nowYear);
 //        dsCreation.writeNoiseDataset(oldYearInitial, nowYear);
 
         // calculate statistics for datasets
-//        dsCreation.calculateStatistics(oldYearInitial, nowYear, logFile);
+        dsCreation.calculateStatistics(oldYearInitial, nowYear, logFile);
 //        String log = workingPath + pathDelimiter + "javalog_Thu_Jun_17_21-54-35_UTC_2021.txt";
 //        dsCreation.calculateStatistics(oldYearInitial, nowYear, log);
 
