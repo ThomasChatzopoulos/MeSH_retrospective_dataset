@@ -1,17 +1,19 @@
 # MeSH_retrospective_dataset
 ## Creation of biomedical content datasets
 
-This project concern dataset creation using PubMed and MeSH ontology.
-This project is an extension of the project *MeSH_Extension<sup>1</sup>*; the MeSH_Extension project  
+This project concern dataset creation using PubMed and MeSH thesaurus.
+This project is an extension of the project *MeSH_Extension<sup>1</sup>*.
 
-As an extension of the MeSH_Extension project, this project for a given range of years compares MeSH ontology and finds a cotegory of fine-grained descriptors and based on them creates the training and test datasets.
+As an extension of the MeSH_Extension project, this project for a given range of years compares MeSH versions and return a list of concepts improved to fine-grained descriptors, based on which the creation of the training and test datasets.
+The method uses as heuristic the concept occurrence in the title ot abstract of an article, as the articles of the train dataset are weak-labeled. 
 
-The main class of the project is *MeSHDiffHarvester.java* and the tataset creation takes place in the class *DatasetCreation.java*. 
+The main class of the project is [*MeSHDiffHarvester.java*](https://github.com/ThomasChatzopoulos/MeSH_retrospective_dataset/blob/main/retrospective_dataset/DiffHarvester/MeSHDiffHarvester.java) 
+and the dataset creation takes place in the class [*DatasetCreator.java*](https://github.com/ThomasChatzopoulos/MeSH_retrospective_dataset/blob/main/retrospective_dataset/DiffHarvester/DatasetCreator.java). 
 The project can be divided into 3 parts:
 
-1. Find the list of the fine-graind descriptors (Method: selectDatasets())
-2. Create training and test datasets (Method: createJSONDatasets())
-3. Calculate statistics for the datasets (Method: calculateStatistics())
+1. Find the list of the fine-grained descriptors (Method: [selectDatasets](https://github.com/ThomasChatzopoulos/MeSH_retrospective_dataset/blob/main/retrospective_dataset/DiffHarvester/MeSHDiffHarvester.java#L266))
+2. Create training and test datasets (Method: [createJSONDatasets](https://github.com/ThomasChatzopoulos/MeSH_retrospective_dataset/blob/main/retrospective_dataset/DiffHarvester/DatasetCreator.java#L99))
+3. Calculate statistics for the datasets (Method: [calculateStatistics](https://github.com/ThomasChatzopoulos/MeSH_retrospective_dataset/blob/main/retrospective_dataset/DiffHarvester/DatasetCreator.java#L400))
 
 The result of the execution of the project is the datasets for the given range of years, with other utility files. In more detail:
 
