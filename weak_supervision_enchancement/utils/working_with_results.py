@@ -180,6 +180,13 @@ def combAnalysis(path, year):
 
 
 def createLabelMatrixFromResults(lf_results, lfs_to_use, index):
+    """
+    Convert stored results from JSON/dict to np array.
+    :param lf_results:  The dictionary with the results.
+    :param lfs_to_use:  Label Functions you want to use.
+    :param index:       The descriptor IDs
+    :return:
+    """
     label_matrix = lf_results.get(lfs_to_use[0])[index]
     for lf in lfs_to_use[1:]:
         label_matrix = np.vstack((label_matrix, lf_results.get(lf)[index]))
@@ -224,6 +231,11 @@ def getCombID(lfs_to_use, lfs_comb):
 
 
 def allPossibleNKComb():
+    """
+    Weak supervision enchancement for all the possible label functions combinations.
+    Use "LFsToUse" parameter from settings file.
+    :return: -
+    """
     settings_file = open("../settings.yaml")
     settings = yaml.load(settings_file, Loader=yaml.FullLoader)
 
@@ -331,6 +343,11 @@ def allPossibleNKComb():
 #                                    #
 ######################################
 def specificComb():
+    """
+    Weak supervision enchancement for a specific label functions combination.
+    Use "LFsToUse" parameter from settings file.
+    :return: -
+    """
     settings_file = open("../settings.yaml")
     settings = yaml.load(settings_file, Loader=yaml.FullLoader)
 
@@ -341,13 +358,9 @@ def specificComb():
     lastYear = settings["lastYear"]  # The last year to consider in the analysis
     LFsToUse = settings["LFsToUse"]  # A list with the LFs you want to apply
 
-    os.environ["TF_CPP_MIN_LOG_LEVEL"] = settings[
-        "TF_CPP_MIN_LOG_LEVEL"
-    ]  # Turn off TensorFlow logging messages
     os.environ["PYTHONHASHSEED"] = settings["PYTHONHASHSEED"]  # For reproducibility
 
     newWorkingPath = createDir(settings["workingPath"], "snorkel_results_0_2_6")
-
 
     for year in range(firstYear, lastYear + 1):
         X_voter_results = {}
@@ -384,7 +397,7 @@ def specificComb():
                 lf_test_results, LFsToUse, descriptorIDs.index(d)
             )
             # Apply Voters
-            X_pred_lm, Y_pred_lm = applyLabelModel(L_train, L_test, False)
+            X_pred_lm, Y_pred_lm = applyLabelModel(L_train, L_test, False, settings["return_probs"])
             X_pred_maj, Y_pred_maj = applyMajorityVoter(L_train, L_test)
             X_pred_min, Y_pred_min = applyMinorityVoter(L_train, L_test)
             X_voter_results = updatePredictions(
@@ -437,6 +450,10 @@ def specificComb():
 
 
 def filterLabelMatrix():
+    """
+    Apply filtering on the Label Matrix (filter ones with no interesting).
+    :return: -
+    """
     settings_file = open("../settings.yaml")
     settings = yaml.load(settings_file, Loader=yaml.FullLoader)
 
@@ -487,6 +504,10 @@ def filterLabelMatrix():
 
 
 def filterLF(lf_name):
+    """
+    Apply filtering on a Label Funcntion (filter ones with no interesting).
+    :return: -
+    """
     settings_file = open("../settings.yaml")
     settings = yaml.load(settings_file, Loader=yaml.FullLoader)
 
@@ -510,7 +531,7 @@ def filterLF(lf_name):
         filtered_test_data = filtering(
             lf_test_results[lf_name].transpose(),
             weakly_test,
-            descr_ids,
+            descr_ids
         )
         print("save")
         filtered_df = pd.DataFrame(filtered_test_data, columns=descr_ids)
@@ -520,7 +541,13 @@ def filterLF(lf_name):
         )
 
 
-def differences(year, filesPath, workingPath):
+def differences(year, workingPath):
+    """
+    Find and store differences between two label matrix.
+    :param year:        The year associated with the label matrix
+    :param workingPath: The path that files are stored
+    :return:
+    """
     voters = ["label_model", "majority_voter", "minority_voter"]
     datType = ["train", "test"]
     for voter in voters:
@@ -532,6 +559,7 @@ def differences(year, filesPath, workingPath):
 
 def short_summary():
     settings_file = open("../settings.yaml")
+    settings = yaml.load(settings_file, Loader=yaml.FullLoader)
 
     # Parameters
     workingPath = settings["workingPath"]  # The path where the results will be stored
@@ -569,3 +597,124 @@ def short_summary():
                         if row.get('label') == 'macro avg':
                             content_row = [report, row.get('precision'), row.get('recall'), row.get('f1-score'), row.get('support')]
                             writer.writerow(content_row)
+
+
+def LFfromJSON(lf_name):
+    """
+    Store a specific Label Function using JSON file with results and filter it.
+    :param lf_name: The name of the Label Function
+    :return:
+    """
+    settings_file = open("../settings.yaml")
+    settings = yaml.load(settings_file, Loader=yaml.FullLoader)
+
+    # Parameters
+    workingPath = settings["workingPath"]  # The path where the results will be stored
+    filesPath = settings["filesPath"]  # The path where the files, like datasets, are stored
+    firstYear = settings["firstYear"]  # The first year to consider in the analysis
+    lastYear = settings["lastYear"]  # The last year to consider in the analysis
+
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = settings["TF_CPP_MIN_LOG_LEVEL"]  # Turn off TensorFlow logging messages
+    os.environ["PYTHONHASHSEED"] = settings["PYTHONHASHSEED"]  # For reproducibility
+
+    for year in range(firstYear, lastYear + 1):
+        print(year)
+        descr_ids = pd.read_csv(f'{filesPath}/UseCasesSelected_{year}.csv')["Descr. UI"].values.tolist()
+        lf_test_results = loadResultsFromJSON(f'{workingPath}/snorkel_results_{year}_0_2_6', "lf_test_results", year)
+        pmids = pd.read_csv(f'{filesPath}/Dataset_SI_old_{year}/weakly_labelled/test_{year}.csv')["pmid"]
+
+        print("save lf")
+        lf_df = pd.DataFrame(lf_test_results[lf_name].transpose(), columns=descr_ids)
+        lf_df.insert(0, 'pmid', pmids)
+        lf_df.to_csv(
+            f"{workingPath}/snorkel_results_{year}_0_2_6/label_matrix_test_{lf_name}_{year}.csv", index_label=["pmid"], index=False
+        )
+
+        print("save diff")
+        test_results = pd.read_csv(f'{workingPath}/snorkel_results_{year}_0_2_6/label_matrix_test_{lf_name}_{year}.csv')
+        test_results_filt = pd.read_csv(f'{workingPath}/snorkel_results_{year}_0_2_6/label_matrix_test_{lf_name}_{year}_filtered.csv')
+        test_results.compare(test_results_filt).to_csv(f"{workingPath}/snorkel_results_{year}_0_2_6/label_matrix_test_{lf_name}_{year}_diff.csv")
+
+
+def corrMatrixAndDeviation():
+    """
+    Calculate the standard Deviation and the correlation matrix for the Label Functions
+    :return:
+    """
+    settings_file = open("../settings.yaml")
+    settings = yaml.load(settings_file, Loader=yaml.FullLoader)
+
+    workingPath = settings["workingPath"]  # The path where the results will be stored
+    filesPath = settings["filesPath"]  # The path where the files, like datasets, are stored
+    year = settings["firstYear"]  # The first year to consider in the analysis
+    LFsToUse = settings["LFsToUse"]
+
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = settings["TF_CPP_MIN_LOG_LEVEL"]  # Turn off TensorFlow logging messages
+    os.environ["PYTHONHASHSEED"] = settings["PYTHONHASHSEED"]  # For reproducibility
+
+    short_LF_names_dict = {
+        "concept_occurrence_label": "CO",
+        "name_exact": "NE",
+        "name_exact_lowercase": "NL",
+        "name_exact_lowercase_no_punc": "NNP",
+        "name_exact_lowercase_tokens": "NT",
+        "synonyms_exact": "SE",
+        "synonyms_lowercase": "SL",
+        "synonyms_lowercase_no_punc": "SNP",
+        "synonyms_lowercase_tokens": "ST"
+    }
+    short_LF_names = ["CO", "NE", "NL", "NNP", "NT", "SE", "SL", "SNP", "ST"]
+
+    print("load")
+    descr_ids = pd.read_csv(f'{filesPath}/UseCasesSelected_{year}.csv')["Descr. UI"].values.tolist()
+    lf_test_results = loadResultsFromJSON(f"{workingPath}/snorkel_results/correlation/corr_matrix_test_weak_2006", "lf_test_results", year)
+    pmids = pd.read_csv(f'{filesPath}/Dataset_SI_old_{year}/weakly_labelled/test_{year}.csv')["pmid"]
+
+    print("calculate")
+    corr_matr_dict_pandas = {}
+    df_descr_dict = {}
+    for descr in descr_ids:
+        print(f'working on {descr}')
+        df_descr = pd.DataFrame(index=pmids, columns=LFsToUse)
+        for lf in LFsToUse:
+            df_descr[lf] = pd.DataFrame(lf_test_results[lf].transpose(), index=pmids, columns=descr_ids)[descr]
+            df_descr[lf] = df_descr[lf].astype('int')
+        corr_matr_dict_pandas[descr] = df_descr.corr()
+        cmt = corr_matr_dict_pandas[descr].rename(index=short_LF_names_dict, columns=short_LF_names_dict)
+        # cmt.to_csv(f"{workingPath}/snorkel_results/correlation/corr_{descr}.csv")
+        df_descr_dict[descr] = df_descr.to_json()
+
+    print("div correlations")
+    corr_matr = pd.DataFrame(0, index=LFsToUse, columns=LFsToUse)
+    mask = pd.DataFrame(0, index=LFsToUse, columns=LFsToUse)
+    for descr in descr_ids:
+        corr_matr = corr_matr.add(corr_matr_dict_pandas[descr], fill_value=0)
+        mask = mask.add(corr_matr_dict_pandas[descr].notnull().astype(int))
+
+    corr_matr_final = corr_matr.div(mask)
+    # corr_matr_final.rename(index=short_LF_names_dict, columns=short_LF_names_dict, inplace=True)
+    corr_matr_final.to_csv(f"{workingPath}/snorkel_results/correlation/correlation_matrix_final.csv")
+
+    # std = sqrt(mean(x)), where x = abs(a - a.mean())**2
+    std_sub_abs_sq_add = pd.DataFrame(0, index=LFsToUse, columns=LFsToUse)
+    df = pd.concat(corr_matr_dict_pandas, names=['d', 'lf'])
+    d = df.iloc[df.index.get_level_values('lf') == 'concept_occurrence_label'].std(numeric_only=True, ddof=0)
+    for descr in descr_ids:
+        std_sub = corr_matr_dict_pandas[descr].sub(corr_matr_final)
+        std_sub_abs = std_sub.abs()
+        std_sub_abs_sq = std_sub_abs**2
+        std_sub_abs_sq_add = std_sub_abs_sq_add.add(std_sub_abs_sq, fill_value=0)
+    std_sub_abs_sq_mean = std_sub_abs_sq_add.div(mask)
+    std_final = std_sub_abs_sq_mean**(1/2)
+
+    std_sub_abs_sq_mean.rename(index=short_LF_names_dict, columns=short_LF_names_dict, inplace=True)
+    std_sub_abs_sq_mean.to_csv(f"{workingPath}/snorkel_results/correlation/var_final.csv")
+
+    std_final.rename(index=short_LF_names_dict, columns=short_LF_names_dict, inplace=True)
+    std_final.to_csv(f"{workingPath}/snorkel_results/correlation/std_final.csv")
+
+    # mask.rename(index=short_LF_names_dict, columns=short_LF_names_dict, inplace=True)
+    mask.to_csv(f"{workingPath}/snorkel_results/correlation/mask.csv")
+
+    # with open(f'f"{workingPath}/snorkel_results/correlation/test_results_per_descr.json', "w") as file:
+    #     json.dump(df_descr_dict, file)
