@@ -263,7 +263,7 @@ def updateLFsStatistics(train_dataframe, test_dataframe, train_stat, test_stat, 
     return train_dataframe, test_dataframe
 
 
-def applyLabelModel(train_label_matrix, test_label_matrix, use_defaults):
+def applyLabelModel(train_label_matrix, test_label_matrix, use_defaults, probs):
     """
     Apply the Label Model of snorkel on the train and test data.
     :param train_label_matrix:  The label matrix (LM) for the train data (e.g. L_train)
@@ -273,6 +273,7 @@ def applyLabelModel(train_label_matrix, test_label_matrix, use_defaults):
     :param use_defaults:        Boolean parameter for using or not the default values
                                 of Label Model
                                 type: Boolean
+    :param probs:               return probs
     :return:                    The predictions of the Label Model.
                                 type: np.ndarray (numPy array)
     """
@@ -284,13 +285,12 @@ def applyLabelModel(train_label_matrix, test_label_matrix, use_defaults):
         label_model.fit(
             L_train=train_label_matrix, n_epochs=500, l2=0.005, log_freq=100, seed=123
         )
-    X_prediction = label_model.predict(
-        L=train_label_matrix, return_probs=False, tie_break_policy="random"
-    )
-    Y_prediction = label_model.predict(
-        L=test_label_matrix, return_probs=False, tie_break_policy="random"
-    )
-    return X_prediction, Y_prediction
+    X_prediction = label_model.predict(L=train_label_matrix, return_probs=probs, tie_break_policy="random")
+    Y_prediction = label_model.predict(L=test_label_matrix, return_probs=probs, tie_break_policy="random")
+    if probs:
+        return X_prediction[0], Y_prediction[0], X_prediction[1], Y_prediction[1]
+    else:
+        return X_prediction, Y_prediction, None, None
 
 
 def applyMajorityVoter(train_label_matrix, test_label_matrix):
@@ -544,3 +544,12 @@ def saveVoterPredictions(results, data, descr_ids, path, dt_type, year):
         labelMatrix_dataframe.to_csv(
             f"{path}/label_matrix_{dt_type}_{voter}_{year}.csv", index_label=["pmid"]
         )
+
+
+def saveProbs(path, x_pmids, x_probs, y_pmids, y_probs):
+    x = pd.DataFrame(x_probs, index=x_pmids.values.tolist())
+    x.to_csv(f"{path}/label_model_x_probs.csv", index_label=["pmid"])
+    y = pd.DataFrame(y_probs, index=y_pmids.values.tolist())
+    y. to_csv(f"{path}/label_model_y_probs.csv", index_label=["pmid"])
+    # z = x.compare(y).to_csv(f"{path}/probs_diff.csv")
+    h = 8+9
